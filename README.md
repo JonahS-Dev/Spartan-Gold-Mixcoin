@@ -1,0 +1,2 @@
+# SpartanGold Mixcoin-Extension
+
