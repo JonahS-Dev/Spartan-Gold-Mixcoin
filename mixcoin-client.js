@@ -25,4 +25,10 @@ module.exports = class MixcoinClient extends UtxoClient {
   rememberWarranty(warranty) {
     this.warranties.set(warranty.requestId, warranty);
   }
+
+  // send a mix request to a mixer
+  requestMix(mixerAddress, amount, outputAddress) {
+    // create request, sign it, then broadcast it similar to how
+    // postTransaction works on utxo-mixin
+  }
 };
