@@ -50,6 +50,17 @@ module.exports = class Miner extends Client {
    * @param {Set} [txSet] - Transactions the miner has that have not been accepted yet.
    */
   startNewSearch(txSet=new Set()) {
+    // check if the miner has already received a reward at this address
+    let gotRewardPreviously = this.lastBlock.rewardAddr === this.address;
+
+    // check if the miner already has a starting balance at this address
+    let hasStartingBalance = this.lastBlock.balanceOf(this.address) > 0;
+
+    // if either of the above are true, set up a new address
+    if (gotRewardPreviously || hasStartingBalance) {
+      this.createAddress();
+    }
+
     this.currentBlock = Blockchain.makeBlock(this.address, this.lastBlock);
 
     // Merging txSet into the transaction queue.
