@@ -6,11 +6,9 @@ const utils = require('./utils.js');
 const TX_CONST = "TX";
 
 /**
- * A transaction comes from a single account, specified by "address". For
- * each account, transactions have an order established by the nonce. A
- * transaction should not be accepted if the nonce has already been used.
- * (Nonces are in increasing order, so it is easy to determine when a nonce
- * has been used.)
+ * A UTXO transaction can spend funds from multiple input addresses.
+ * Each input UTXO is consumed, and the transaction creates new output
+ * UTXOs with an optional miner transaction fee.
  */
 module.exports = class Transaction {
 
@@ -23,19 +21,18 @@ module.exports = class Transaction {
    * 
    * @constructor
    * @param {Object} obj - The inputs and outputs of the transaction.
-   * @param obj.from - The address of the payer.
-   * @param obj.nonce - Number that orders the payer's transactions.  For coinbase
-   *          transactions, this should be the block height.
-   * @param obj.pubKey - Public key associated with the specified from address.
-   * @param obj.sig - Signature of the transaction.  This field may be omitted.
+   * @param {Array} obj.from - The addresses of the payer.
+   * @param obj.nonce - Number that orders the payer's transactions.
+   * @param {Array} obj.pubKey - Public keys associated with the specified from address.
+   * @param {Array} obj.sig - Signatures of the transaction.
    * @param {Array} [obj.outputs] - An array of the outputs.
    * @param [obj.fee] - The amount of gold offered as a transaction fee.
    * @param [obj.data] - Object with any additional properties desired for the transaction.
    */
-  constructor({from, nonce, pubKey, sig, outputs, fee=0, data={}}) {
-    this.from = from;
+  constructor({from, nonce=0, pubKey, sig=[], outputs, fee=0, data={}}) {
+    this.from = from || [];
     this.nonce = nonce;
-    this.pubKey = pubKey;
+    this.pubKey = pubKey || [];
     this.sig = sig;
     this.fee = fee;
     this.outputs = [];
@@ -68,7 +65,7 @@ module.exports = class Transaction {
    *    public key included in the transaction.
    */
   sign(privKey) {
-    this.sig = utils.sign(privKey, this.id);
+    this.sig.push(utils.sign(privKey, this.id));
   }
 
   /**
@@ -78,9 +75,24 @@ module.exports = class Transaction {
    * @returns {Boolean} - Validity of the signature and from address.
    */
   validSignature() {
-    return this.sig !== undefined &&
-        utils.addressMatchesKey(this.from, this.pubKey) &&
-        utils.verifySignature(this.pubKey, this.id, this.sig);
+    for (let i = 0; i < this.from.length; i++) {
+      // verify that address matches the public key
+      if (!utils.addressMatchesKey(this.from[i], this.pubKey[i])) {
+        return false;
+      }
+
+      // verify there is a signature
+      if (this.sig[i] === undefined) {
+        return false;
+      }
+
+      // verify the signature of this.id is valid for the public key
+      if (!utils.verifySignature(this.pubKey[i], this.id, this.sig[i])) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   /**
@@ -92,7 +104,24 @@ module.exports = class Transaction {
    *    according to the balances from the specified block.
    */
   sufficientFunds(block) {
-    return this.totalOutput() <= block.balances.get(this.from);
+    return this.totalOutput() <= this.totalInput(block);
+  }
+
+  /**
+   * Calculates the sum of all inputs.
+   *
+   * @param {Block} block - Block used to look up UTXO balances
+   *
+   * @returns {Number} - Total amount of gold available from all inputs
+   */
+  totalInput(block) {
+    let total = 0;
+
+    for(let address of this.from) {
+      total = total + block.balanceOf(address);
+    }
+
+    return total;
   }
 
   /**
