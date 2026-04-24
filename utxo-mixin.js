@@ -214,6 +214,14 @@ module.exports = {
       tx.sign(privateKey);
     }
 
+    // remove consumed input UTXOs from wallet
+    // create a set of addresses using from (inputs)
+    let spentAddresses = new Set(from);
+
+    // if an address was used as an input, remove it from wallet (filter out
+    // spent addresses)
+    this.wallet = this.wallet.filter(({ address }) => !spentAddresses.has(address));
+
 
     // Adding transaction to pending.
     this.pendingOutgoingTransactions.set(tx.id, tx);
