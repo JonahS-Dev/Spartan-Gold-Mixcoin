@@ -25,10 +25,9 @@ module.exports = class Block {
     this.prevBlockHash = prevBlock ? prevBlock.hashVal() : null;
     this.target = target;
 
-    // Get the balances and nonces from the previous block, if available.
-    // Note that balances and nonces are NOT part of the serialized format.
+    // Get balances from the previous block, if available.
+    // Note that balances are NOT part of the serialized format.
     this.balances = prevBlock ? new Map(prevBlock.balances) : new Map();
-    this.nextNonce = prevBlock ? new Map(prevBlock.nextNonce) : new Map();
 
     if (prevBlock && prevBlock.rewardAddr) {
       // Add the previous block's rewards to the miner who found the proof.
@@ -189,31 +188,22 @@ module.exports = class Block {
     } else if (!tx.validSignature()) {
       if (client) client.log(`Invalid signature for transaction ${tx.id}.`);
       return false;
-    } else if (!tx.sufficientFunds(this)) {
-      if (client) client.log(`Insufficient gold for transaction ${tx.id}.`);
+    } else if (tx.totalInput(this) !== tx.totalOutput()) {
+      if (client) {
+        let input = tx.totalInput(this);
+        let output = tx.totalOutput();
+        client.log(`Inputs do not match outputs for transaction ${tx.id}: ${input} in, but ${output} out.`);
+      }
       return false;
-    }
-
-    // Checking and updating nonce value.
-    // This portion prevents replay attacks.
-    let nonce = this.nextNonce.get(tx.from) || 0;
-    if (tx.nonce < nonce) {
-      if (client) client.log(`Replayed transaction ${tx.id}.`);
-      return false;
-    } else if (tx.nonce > nonce) {
-      // FIXME: Need to do something to handle this case more gracefully.
-      if (client) client.log(`Out of order transaction ${tx.id}.`);
-      return false;
-    } else {
-      this.nextNonce.set(tx.from, nonce + 1);
     }
 
     // Adding the transaction to the block
     this.transactions.set(tx.id, tx);
 
-    // Taking gold from the sender
-    let senderBalance = this.balanceOf(tx.from);
-    this.balances.set(tx.from, senderBalance - tx.totalOutput());
+    // delete all accounts used as inputs
+    tx.from.forEach((address) => {
+      this.balances.delete(address);
+    });
 
     // Giving gold to the specified output addresses
     tx.outputs.forEach(({amount, address}) => {
@@ -238,7 +228,6 @@ module.exports = class Block {
   rerun(prevBlock) {
     // Setting balances to the previous block's balances.
     this.balances = new Map(prevBlock.balances);
-    this.nextNonce = new Map(prevBlock.nextNonce);
 
     // Adding coinbase reward for prevBlock.
     let winnerBalance = this.balanceOf(prevBlock.rewardAddr);
