@@ -16,7 +16,7 @@ module.exports = class MixcoinMixer extends UtxoClient {
   // accept all requests
   reviewRequest(request) {
     console.log(`RECEIVED REQUEST ${request}`);
-    return { status: "accepted", requestId: request.requestId };
+    return { status: MixcoinConstants.STATUS_ACCEPTED, requestId: request.requestId };
   }
 
   /**
@@ -27,7 +27,8 @@ module.exports = class MixcoinMixer extends UtxoClient {
     this.on(MixcoinConstants.REQUEST_MIX, (request) => {
       let response = this.reviewRequest(request);
 
-      // still need to send response back
+      // send response back
+      this.net.sendMessage(request.returnAddr, MixcoinConstants.REQUEST_MIX_RESPONSE, response);
     });
   }
 

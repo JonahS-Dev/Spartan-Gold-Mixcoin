@@ -16,6 +16,15 @@ module.exports = class MixcoinClient extends UtxoClient {
 
     // store promises/warranties from mixers to use as evidence
     this.warranties = new Map();
+
+    this.setupResponseListener();
+  }
+
+  setupResponseListener() {
+    this.on(MixcoinConstants.REQUEST_MIX_RESPONSE, (response) => {
+      console.log(`RECEIVED RESPONSE ${response}`);
+      console.log(`Response Status ${response.status}`);
+    });
   }
 
   // remember sent mixing requests to see the outcome later
@@ -35,6 +44,6 @@ module.exports = class MixcoinClient extends UtxoClient {
     console.log("REQUSTING MIX");
     
     //sendMessage(address, msg, o)
-    this.net.sendMessage(mixerAddress, MixcoinConstants.REQUEST_MIX, {test: "ksjflkasjlfksjl"});
+    this.net.sendMessage(mixerAddress, MixcoinConstants.REQUEST_MIX, {test: "ksjflkasjlfksjl", returnAddr: this.address});
   }
 };

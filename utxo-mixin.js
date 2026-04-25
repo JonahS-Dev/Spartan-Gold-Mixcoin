@@ -85,8 +85,20 @@ module.exports = {
     // create new keypair
     this.keyPair = utils.generateKeypair();
 
+    // FIXME: If the network starts sending to undefined addresses, it's probably because I added this
+    // but the idea is to change the address associated with the fake-net.sendMessage() method
+    // because we update this.address in this method but the address in fake-net stays the same.
+    // If we need to, we can just use a constant address, but we can try to make the address to send
+    // to by changing here 
+    // Edit the network's client mapping to use the new addresses
+    this.net.clients.delete(this.address);
+
     // derive new address from new public key
     this.address = utils.calcAddress(this.keyPair.public);
+
+    // FIXME: and here
+    // Add the new address
+    this.net.clients.set(this.address, this);
 
     // save keypair and address
     this.wallet.push({

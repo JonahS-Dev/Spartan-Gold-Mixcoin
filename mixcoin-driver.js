@@ -100,17 +100,13 @@ alice.postTransaction([{ amount: 40, address: addr }]);
 setTimeout(() => {
   console.log();
   showBalances();
-  // FIXME: If you create a new address, the address of pabloEscobar.address changes (utxo-mixin.js line 89)
-  // but the key in the fake-net stays the same, so you can't send it a message individually
-  // we should either store the original address so we can access it with FakeNet.sendMessage() or
-  // update the map/sending system to use the new address
-//   let addr = pabloEscobar.createAddress();
+  let addr = pabloEscobar.createAddress();
   let outputAddr = alCapone.createAddress();
   console.log();
   console.log(`***Al Capone is requesting a mix from Pablo Escobar at address ${addr}`);
   console.log();
-  alCapone.requestMix(pabloEscobar.address, 100, outputAddr);
-}, 1000);
+  alCapone.requestMix(addr, 100, outputAddr);
+}, 500);
 
 /*
  * END OF NEW TRANSACTIONS
@@ -128,5 +124,5 @@ setTimeout(() => {
   console.log(`Minnie's chain length is ${minnie.currentBlock.chainLength}.`);
 
   process.exit(0);
-}, 6000);
+}, 2000);
 
