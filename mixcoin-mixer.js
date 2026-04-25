@@ -16,6 +16,18 @@ module.exports = class MixcoinMixer extends UtxoClient {
   // accept all requests
   reviewRequest(request) {
     console.log(`RECEIVED REQUEST ${request}`);
+
+    // FIXME: Need to include the relevant information and sign here
+    
+    // Page 7: https://soc1024.ece.illinois.edu/mix.pdf
+    // Chunk size: v
+    // Input address: K_in
+    // Output address: deadline t1 (by which Alice will send the funds. Alice does not have to send the funds)
+    // Nonce: n
+    // Additional parameters included by the mixer:
+    // t2: time by which the mixer will return the funds to the address (public policy)
+    // ρ: fee rate
+
     return { status: MixcoinConstants.STATUS_ACCEPTED, requestId: request.requestId };
   }
 
