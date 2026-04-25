@@ -2,6 +2,7 @@
 
 const UtxoClient = require("./utxo-client.js");
 const MixcoinConstants = require("./mixcoin-constants.js");
+const { FakeNet, utils } = require('spartan-gold');
 
 /**
  * A MixCoin mixer node.
@@ -9,10 +10,12 @@ const MixcoinConstants = require("./mixcoin-constants.js");
 module.exports = class MixcoinMixer extends UtxoClient {
   constructor(...args) {
     super(...args);
+    this.setupRequestListener();
   }
 
   // accept all requests
   reviewRequest(request) {
+    console.log(`RECEIVED REQUEST ${request}`);
     return { status: "accepted", requestId: request.requestId };
   }
 

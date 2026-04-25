@@ -1,6 +1,8 @@
 "use strict";
 
 const UtxoClient = require("./utxo-client.js");
+const MixcoinConstants = require("./mixcoin-constants.js");
+const { FakeNet, utils } = require('spartan-gold');
 
 /**
  * Add Mixcoin client behavior on top of the UTXO client
@@ -30,5 +32,9 @@ module.exports = class MixcoinClient extends UtxoClient {
   requestMix(mixerAddress, amount, outputAddress) {
     // create request, sign it, then broadcast it similar to how
     // postTransaction works on utxo-mixin
+    console.log("REQUSTING MIX");
+    
+    //sendMessage(address, msg, o)
+    this.net.sendMessage(mixerAddress, MixcoinConstants.REQUEST_MIX, {test: "ksjflkasjlfksjl"});
   }
 };
