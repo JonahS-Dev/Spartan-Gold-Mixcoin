@@ -59,7 +59,7 @@ module.exports = class MixcoinMixer extends UtxoClient {
     let signature = utils.sign(this.keyPair.private, acceptedRequest);
 
     return { status: MixcoinConstants.STATUS_ACCEPTED, 
-      warrant: acceptedRequest,
+      warranty: acceptedRequest,
       signature: signature,
       msg: "Request accepted"
     };

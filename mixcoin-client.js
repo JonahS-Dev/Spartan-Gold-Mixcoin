@@ -25,7 +25,7 @@ module.exports = class MixcoinClient extends UtxoClient {
     this.on(MixcoinConstants.REQUEST_MIX_RESPONSE, (response) => {
       console.log(`RECEIVED RESPONSE ${response}`);
       console.log(`Response Message ${response.msg}`);
-      console.log(`Response Warrant ${response.warrant}`);
+      console.log(`Response Warranty ${response.warranty}`);
     });
   }
 
