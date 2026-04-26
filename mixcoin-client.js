@@ -43,7 +43,7 @@ module.exports = class MixcoinClient extends UtxoClient {
 
   // store warranties from mixers to use as evidence in the future
   rememberWarranty(warranty, sig) {
-    this.warranties.set(warranty.requestId, {warranty: warranty, signature: sig});
+    this.warranties.set(warranty.nonce, {warranty: warranty, signature: sig});
   }
 
   // verify that the warranty is valid before sending coins

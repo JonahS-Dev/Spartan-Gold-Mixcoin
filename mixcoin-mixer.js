@@ -37,10 +37,10 @@ module.exports = class MixcoinMixer extends UtxoClient {
       return { status: MixcoinConstants.STATUS_REJECTED, msg: "Chunk size not standard. Please use standard chunk size." };
     }
 
-    if(this.seenRequests.has(request)) {
+    if(this.seenRequests.has(nonce)) {
       return { status: MixcoinConstants.STATUS_REJECTED, msg: "Request received before. Possible replay attack." };
     } else {
-      this.seenRequests.add(request);
+      this.seenRequests.add(nonce);
     }
 
     // Creates the mixer deadline 24 hours after the client deadline
