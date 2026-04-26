@@ -107,7 +107,7 @@ setTimeout(() => {
   console.log();
   console.log(`***Al Capone is requesting a mix from Pablo Escobar at address ${mixerAddr}`);
   console.log();
-  alCapone.requestMix(mixerAddr, MixcoinConstants.STANDARD_CHUNK_SIZE, inputAddr, outputAddr, Date.now());
+  alCapone.requestMix(mixerAddr, MixcoinConstants.STANDARD_CHUNK_SIZE, inputAddr, outputAddr, Date.now(), pabloEscobar.keyPair.public);
 }, 500);
 
 /*
