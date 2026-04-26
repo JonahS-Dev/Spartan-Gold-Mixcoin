@@ -27,10 +27,14 @@ module.exports = class MixcoinClient extends UtxoClient {
       console.log(`RECEIVED RESPONSE ${response}`);
       console.log(`Response Message ${response.msg}`);
       console.log(`Response Warranty ${response.warranty}`);
+      if (response.status !== MixcoinConstants.STATUS_ACCEPTED) {
+        return;
+      }
       let validWarranty = this.verifyWarranty(response.warranty, response.signature);
       if(validWarranty) {
         this.rememberWarranty(response.warranty, response.signature);
         console.log("added valid warranty");
+        this.fundMixRequest(response.warranty.nonce);
       }
     });
   }
@@ -51,6 +55,23 @@ module.exports = class MixcoinClient extends UtxoClient {
     return utils.verifySignature(this.pendingMixRequestPubkeys.get(warranty.nonce), warranty, sig);
   }
 
+  // after warranty is verified, send amount to mixer's deposit address
+  fundMixRequest(nonce) {
+    let request = this.pendingMixRequests.get(nonce);
+
+    // only fund a request once
+    if (request.funded === true) {
+      return;
+    }
+
+    // send the mix amount to the mixer
+    this.postTransaction([{ amount: request.chunkSize, address: request.mixerAddress }]);
+
+    // remember that this request was funded
+    request.funded = true;
+    console.log(`Funded mix request ${nonce}`);
+  }
+
   // send a mix request to a mixer
   requestMix(mixerAddress, chunkSize, inputAddr, outputAddr, deadlineT1, mixerPubKey) {
     // create request, sign it, then broadcast it similar to how
@@ -64,7 +85,9 @@ module.exports = class MixcoinClient extends UtxoClient {
       outputAddress: outputAddr,
       clientDeadline: deadlineT1,
       nonce: nonce,
-      returnAddr: this.address
+      returnAddr: this.address,
+      mixerAddress: mixerAddress,
+      funded: false,
     };
 
     this.rememberPendingMixRequest(request, mixerPubKey);
