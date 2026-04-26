@@ -3,6 +3,7 @@
 const UtxoClient = require("./utxo-client.js");
 const MixcoinConstants = require("./mixcoin-constants.js");
 const { FakeNet, utils } = require('spartan-gold');
+let crypto = require('crypto');
 
 /**
  * Add Mixcoin client behavior on top of the UTXO client
@@ -23,7 +24,8 @@ module.exports = class MixcoinClient extends UtxoClient {
   setupResponseListener() {
     this.on(MixcoinConstants.REQUEST_MIX_RESPONSE, (response) => {
       console.log(`RECEIVED RESPONSE ${response}`);
-      console.log(`Response Status ${response.status}`);
+      console.log(`Response Message ${response.msg}`);
+      console.log(`Response Warrant ${response.warrant}`);
     });
   }
 
@@ -43,12 +45,20 @@ module.exports = class MixcoinClient extends UtxoClient {
   }
 
   // send a mix request to a mixer
-  requestMix(mixerAddress, amount, outputAddress) {
+  requestMix(mixerAddress, chunkSize, inputAddr, outputAddr, deadlineT1) {
     // create request, sign it, then broadcast it similar to how
     // postTransaction works on utxo-mixin
     console.log("REQUSTING MIX");
+    let nonce = crypto.randomBytes(16).toString('base64');
     
     //sendMessage(address, msg, o)
-    this.net.sendMessage(mixerAddress, MixcoinConstants.REQUEST_MIX, {test: "ksjflkasjlfksjl", returnAddr: this.address});
+    this.net.sendMessage(mixerAddress, MixcoinConstants.REQUEST_MIX, {
+      chunkSize: chunkSize, 
+      inputAddress: inputAddr, 
+      outputAddress: outputAddr,
+      clientDeadline: deadlineT1,
+      nonce: nonce,
+      returnAddr: this.address
+    });
   }
 };

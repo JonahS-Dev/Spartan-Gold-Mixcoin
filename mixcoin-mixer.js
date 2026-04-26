@@ -11,6 +11,7 @@ module.exports = class MixcoinMixer extends UtxoClient {
   constructor(...args) {
     super(...args);
     this.setupRequestListener();
+    this.seenRequests = new Set();
   }
 
   // accept all requests
@@ -27,8 +28,41 @@ module.exports = class MixcoinMixer extends UtxoClient {
     // Additional parameters included by the mixer:
     // t2: time by which the mixer will return the funds to the address (public policy)
     // ρ: fee rate
+    let {chunkSize, inputAddress, outputAddress, clientDeadline, nonce, returnAddr} = request;
 
-    return { status: MixcoinConstants.STATUS_ACCEPTED, requestId: request.requestId };
+    // Check for a request that the mixer wants to sign. 
+    // Probably want to sign a fixed chunk size,
+    // and check that the nonce has not been used
+    if(chunkSize !== MixcoinConstants.STANDARD_CHUNK_SIZE) {
+      return { status: MixcoinConstants.STATUS_REJECTED, msg: "Chunk size not standard. Please use standard chunk size." };
+    }
+
+    if(this.seenRequests.has(request)) {
+      return { status: MixcoinConstants.STATUS_REJECTED, msg: "Request received before. Possible replay attack." };
+    } else {
+      this.seenRequests.add(request);
+    }
+
+    // Creates the mixer deadline 24 hours after the client deadline
+    let mixerDeadline = new Date(clientDeadline);
+    mixerDeadline.setHours(mixerDeadline.getHours() + 24);
+
+    let acceptedRequest = {
+      chunkSize: chunkSize, 
+      inputAddress: inputAddress, 
+      outputAddress: outputAddress,
+      clientDeadline: clientDeadline,
+      mixerDeadline: mixerDeadline,
+      nonce: nonce,
+    };
+
+    let signature = utils.sign(this.keyPair.private, acceptedRequest);
+
+    return { status: MixcoinConstants.STATUS_ACCEPTED, 
+      warrant: acceptedRequest,
+      signature: signature,
+      msg: "Request accepted"
+    };
   }
 
   /**

@@ -8,6 +8,7 @@ const UtxoMiner = require('./utxo-miner.js');
 const UtxoTransaction = require('./utxo-transaction.js');
 const MixcoinMixer = require('./mixcoin-mixer.js');
 const MixcoinClient = require('./mixcoin-client.js');
+const MixcoinConstants = require('./mixcoin-constants.js');
 
 /**
  * BASING OFF OF part2.js 
@@ -100,12 +101,13 @@ alice.postTransaction([{ amount: 40, address: addr }]);
 setTimeout(() => {
   console.log();
   showBalances();
-  let addr = pabloEscobar.createAddress();
+  let mixerAddr = pabloEscobar.createAddress();
+  let inputAddr = alCapone.address;
   let outputAddr = alCapone.createAddress();
   console.log();
-  console.log(`***Al Capone is requesting a mix from Pablo Escobar at address ${addr}`);
+  console.log(`***Al Capone is requesting a mix from Pablo Escobar at address ${mixerAddr}`);
   console.log();
-  alCapone.requestMix(addr, 100, outputAddr);
+  alCapone.requestMix(mixerAddr, MixcoinConstants.STANDARD_CHUNK_SIZE, inputAddr, outputAddr, Date.now());
 }, 500);
 
 /*

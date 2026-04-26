@@ -5,4 +5,5 @@ module.exports = {
   REQUEST_MIX_RESPONSE: "REQUEST_MIX_RESPONSE",
   STATUS_ACCEPTED: "accepted",
   STATUS_REJECTED: "rejected",
+  STANDARD_CHUNK_SIZE: 100,
 };
