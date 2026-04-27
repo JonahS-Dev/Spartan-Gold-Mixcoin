@@ -30,13 +30,19 @@ module.exports = class MixcoinMixer extends UtxoClient {
     // Additional parameters included by the mixer:
     // t2: time by which the mixer will return the funds to the address (public policy)
     // ρ: fee rate
-    let {chunkSize, inputAddress, outputAddress, clientDeadline, nonce, returnAddr} = request;
+    let {chunkSize, inputAddress, outputAddress, clientDeadline, nonce} = request;
+    let feeRate = MixcoinConstants.MIXER_FEE_RATE;
+    let payoutAmount = Math.floor(chunkSize * (1 - feeRate));
 
     // Check for a request that the mixer wants to sign. 
     // Probably want to sign a fixed chunk size,
     // and check that the nonce has not been used
     if(chunkSize !== MixcoinConstants.STANDARD_CHUNK_SIZE) {
       return { status: MixcoinConstants.STATUS_REJECTED, msg: "Chunk size not standard. Please use standard chunk size." };
+    }
+
+    if (payoutAmount <= 0) {
+      return { status: MixcoinConstants.STATUS_REJECTED, msg: "Invalid configuration. Payout amount must be positive." };
     }
 
     if(this.seenRequests.has(nonce)) {
@@ -51,6 +57,8 @@ module.exports = class MixcoinMixer extends UtxoClient {
 
     let acceptedRequest = {
       chunkSize: chunkSize, 
+      mixerFeeRate: feeRate,
+      payoutAmount: payoutAmount,
       inputAddress: inputAddress, 
       outputAddress: outputAddress,
       clientDeadline: clientDeadline,
@@ -62,6 +70,8 @@ module.exports = class MixcoinMixer extends UtxoClient {
     // store mixer state for warranted requests (mixer accepted and signed) so we can track funding and payout
     this.warrantedRequests.set(nonce, {
       chunkSize: acceptedRequest.chunkSize,
+      mixerFeeRate: acceptedRequest.mixerFeeRate,
+      payoutAmount: acceptedRequest.payoutAmount,
       inputAddress: acceptedRequest.inputAddress,
       outputAddress: acceptedRequest.outputAddress,
       clientDeadline: acceptedRequest.clientDeadline,
@@ -155,25 +165,20 @@ module.exports = class MixcoinMixer extends UtxoClient {
       return null;
     }
 
-    // collect output addresses for this mix round
-    let payoutAddresses = [];
-    for (let request of readyRequests) {
-      payoutAddresses.push(request.outputAddress);
-    }
-
     // shuffle payout order so it does not match funding order
-    let shuffledAddresses = [];
-    while (payoutAddresses.length > 0) {
-      let index = Math.floor(Math.random() * payoutAddresses.length);
-      let removedAddresses = payoutAddresses.splice(index, 1);
-      let address = removedAddresses[0];
-      shuffledAddresses.push(address);
+    let queuedRequests = Array.from(readyRequests);
+    let shuffledRequests = [];
+    while (queuedRequests.length > 0) {
+      let index = Math.floor(Math.random() * queuedRequests.length);
+      let removedRequests = queuedRequests.splice(index, 1);
+      let request = removedRequests[0];
+      shuffledRequests.push(request);
     }
 
     // create outputs for each recipient
-    let outputs = shuffledAddresses.map((address) => ({
-      amount: MixcoinConstants.STANDARD_CHUNK_SIZE,
-      address: address,
+    let outputs = shuffledRequests.map((request) => ({
+      amount: request.payoutAmount,
+      address: request.outputAddress,
     }));
 
     // send payout transaction

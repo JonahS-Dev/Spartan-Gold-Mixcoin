@@ -6,4 +6,5 @@ module.exports = {
   STATUS_ACCEPTED: "accepted",
   STATUS_REJECTED: "rejected",
   STANDARD_CHUNK_SIZE: 100,
+  MIXER_FEE_RATE: 0.02,
 };

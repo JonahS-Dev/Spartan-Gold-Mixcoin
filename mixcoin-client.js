@@ -30,6 +30,10 @@ module.exports = class MixcoinClient extends UtxoClient {
       if (response.status !== MixcoinConstants.STATUS_ACCEPTED) {
         return;
       }
+      if (!this.hasValidFeeTerms(response.warranty)) {
+        console.log("Rejected warranty, invalid fee terms");
+        return;
+      }
       let validWarranty = this.verifyWarranty(response.warranty, response.signature);
       if(validWarranty) {
         this.rememberWarranty(response.warranty, response.signature);
@@ -37,6 +41,15 @@ module.exports = class MixcoinClient extends UtxoClient {
         this.fundMixRequest(response.warranty.nonce);
       }
     });
+  }
+
+  // make sure mixer fee terms in the warranty make sense
+  hasValidFeeTerms(warranty) {
+    if (warranty.mixerFeeRate < 0 || warranty.mixerFeeRate > 100 || warranty.payoutAmount > warranty.chunkSize || warranty.payoutAmount < 0) {
+      return false;
+    }
+
+    return true;
   }
 
   // remember sent mixing requests to see the outcome later
