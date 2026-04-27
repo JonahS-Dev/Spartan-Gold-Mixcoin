@@ -91,7 +91,7 @@ module.exports = {
     // If we need to, we can just use a constant address, but we can try to make the address to send
     // to by changing here 
     // Edit the network's client mapping to use the new addresses
-    this.net.clients.delete(this.address);
+    // this.net.clients.delete(this.address);
 
     // derive new address from new public key
     this.address = utils.calcAddress(this.keyPair.public);

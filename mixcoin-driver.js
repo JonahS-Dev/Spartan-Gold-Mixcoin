@@ -9,6 +9,7 @@ const UtxoTransaction = require('./utxo-transaction.js');
 const MixcoinMixer = require('./mixcoin-mixer.js');
 const MixcoinClient = require('./mixcoin-client.js');
 const MixcoinConstants = require('./mixcoin-constants.js');
+const MixcoinNet = require('./mixcoin-net.js');
 
 /**
  * BASING OFF OF part2.js 
@@ -16,7 +17,7 @@ const MixcoinConstants = require('./mixcoin-constants.js');
 
 console.log("Starting simulation.  This may take a moment...");
 
-let fakeNet = new FakeNet();
+let fakeNet = new MixcoinNet();
 
 // Clients
 let alice = new UtxoClient({name: "Alice", net: fakeNet});
@@ -73,15 +74,15 @@ function showBalances() {
   
   console.log();
   console.log(`Sam Bankman-Fried's balance is ${samBankmanFried.availableGold}.`);
-  alCapone.showAllUtxos();
+  samBankmanFried.showAllUtxos();
 
   console.log();
   console.log(`Meyer Lansky's balance is ${meyerLansky.availableGold}.`);
-  alCapone.showAllUtxos();
+  meyerLansky.showAllUtxos();
 
   console.log();
   console.log(`Ferdinand Marcos' balance is ${ferdinandMarcos.availableGold}.`);
-  alCapone.showAllUtxos();
+  ferdinandMarcos.showAllUtxos();
 
   console.log();
   console.log(`Pablo Escobar's balance is ${pabloEscobar.availableGold}.`);
@@ -144,9 +145,9 @@ function requestValidMix(mixer, client) {
 
 requestValidMix(pabloEscobar, alCapone);
 
-setTimeout(() => {
+// setTimeout(() => {
 
-}, 500);
+// }, 500);
 // requestValidMix(pabloEscobar, samBankmanFried);
 // requestValidMix(pabloEscobar, meyerLansky);
 // requestValidMix(pabloEscobar, ferdinandMarcos);
