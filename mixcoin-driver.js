@@ -25,6 +25,9 @@ let charlie = new UtxoClient({name: "Charlie", net: fakeNet});
 
 // Mixcoin Clients
 let alCapone = new MixcoinClient({name: "alCapone", net: fakeNet});
+let samBankmanFried = new MixcoinClient({name: "samBankmanFried", net: fakeNet});
+let meyerLansky = new MixcoinClient({name: "meyerLansky", net: fakeNet});
+let ferdinandMarcos = new MixcoinClient({name: "ferdinandMarcos", net: fakeNet});
 
 // Mixers
 let pabloEscobar = new MixcoinMixer({name: "pabloEscobar", net: fakeNet});
@@ -42,7 +45,10 @@ let genesis = Blockchain.makeGenesis({
     [bob, 99],
     [charlie, 67],
     [alCapone, 167],
-    [pabloEscobar, 67],
+    [samBankmanFried, 167],
+    [meyerLansky, 167],
+    [ferdinandMarcos, 167],
+    [pabloEscobar, 467],
     [minnie, 200],
     [mickey, 200],
   ]),
@@ -64,6 +70,18 @@ function showBalances() {
   console.log();
   console.log(`Al Capones' balance is ${alCapone.availableGold}.`);
   alCapone.showAllUtxos();
+  
+  console.log();
+  console.log(`Sam Bankman-Fried's balance is ${samBankmanFried.availableGold}.`);
+  alCapone.showAllUtxos();
+
+  console.log();
+  console.log(`Meyer Lansky's balance is ${meyerLansky.availableGold}.`);
+  alCapone.showAllUtxos();
+
+  console.log();
+  console.log(`Ferdinand Marcos' balance is ${ferdinandMarcos.availableGold}.`);
+  alCapone.showAllUtxos();
 
   console.log();
   console.log(`Pablo Escobar's balance is ${pabloEscobar.availableGold}.`);
@@ -82,7 +100,7 @@ function showBalances() {
 console.log("Initial balances:");
 showBalances();
 
-fakeNet.register(alice, bob, charlie, alCapone, pabloEscobar, minnie, mickey);
+fakeNet.register(alice, bob, charlie, alCapone, samBankmanFried, meyerLansky, ferdinandMarcos, pabloEscobar, minnie, mickey);
 
 // Miners start mining.
 minnie.initialize();
@@ -98,17 +116,40 @@ alice.postTransaction([{ amount: 40, address: addr }]);
 /* 
  * NEW TRANSACTIONS HERE
 */
+// setTimeout(() => {
+//   console.log();
+//   showBalances();
+//   let mixerAddr = pabloEscobar.address;
+//   let inputAddr = alCapone.address;
+//   let outputAddr = alCapone.createAddress();
+//   console.log();
+//   console.log(`***Al Capone is requesting a mix from Pablo Escobar at address ${mixerAddr}`);
+//   console.log();
+//   alCapone.requestMix(mixerAddr, MixcoinConstants.STANDARD_CHUNK_SIZE, inputAddr, outputAddr, Date.now(), pabloEscobar.keyPair.public);
+// }, 500);
+
+function requestValidMix(mixer, client) {
+  setTimeout(() => {
+    console.log();
+    showBalances();
+    let mixerAddr = mixer.address;
+    let inputAddr = client.address;
+    let outputAddr = client.createAddress();
+    console.log();
+    console.log(`***${client.name} is requesting a mix from ${mixer.name} at address ${mixerAddr}`);
+    console.log();
+    client.requestMix(mixerAddr, MixcoinConstants.STANDARD_CHUNK_SIZE, inputAddr, outputAddr, Date.now(), mixer.keyPair.public);
+  }, 500);
+}
+
+requestValidMix(pabloEscobar, alCapone);
+
 setTimeout(() => {
-  console.log();
-  showBalances();
-  let mixerAddr = pabloEscobar.address;
-  let inputAddr = alCapone.address;
-  let outputAddr = alCapone.createAddress();
-  console.log();
-  console.log(`***Al Capone is requesting a mix from Pablo Escobar at address ${mixerAddr}`);
-  console.log();
-  alCapone.requestMix(mixerAddr, MixcoinConstants.STANDARD_CHUNK_SIZE, inputAddr, outputAddr, Date.now(), pabloEscobar.keyPair.public);
+
 }, 500);
+// requestValidMix(pabloEscobar, samBankmanFried);
+// requestValidMix(pabloEscobar, meyerLansky);
+// requestValidMix(pabloEscobar, ferdinandMarcos);
 
 /*
  * END OF NEW TRANSACTIONS
