@@ -41,7 +41,7 @@ let genesis = Blockchain.makeGenesis({
     [alice, 233],
     [bob, 99],
     [charlie, 67],
-    [alCapone, 67],
+    [alCapone, 167],
     [pabloEscobar, 67],
     [minnie, 200],
     [mickey, 200],
@@ -101,7 +101,7 @@ alice.postTransaction([{ amount: 40, address: addr }]);
 setTimeout(() => {
   console.log();
   showBalances();
-  let mixerAddr = pabloEscobar.createAddress();
+  let mixerAddr = pabloEscobar.address;
   let inputAddr = alCapone.address;
   let outputAddr = alCapone.createAddress();
   console.log();
@@ -126,5 +126,5 @@ setTimeout(() => {
   console.log(`Minnie's chain length is ${minnie.currentBlock.chainLength}.`);
 
   process.exit(0);
-}, 2000);
+}, 7000);
 
