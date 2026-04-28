@@ -33,6 +33,12 @@ let ferdinandMarcos = new MixcoinClient({name: "ferdinandMarcos", net: fakeNet})
 // Mixers
 let pabloEscobar = new MixcoinMixer({name: "pabloEscobar", net: fakeNet});
 
+// // testing: preventing the mixer from sending return funds
+// pabloEscobar.mixCoins = function(requestIds) {
+//   console.log("skipping mixer payout");
+//   return null;
+// };
+
 // Miners
 let minnie = new UtxoMiner({name: "Minnie", net: fakeNet});
 let mickey = new UtxoMiner({name: "Mickey", net: fakeNet});
