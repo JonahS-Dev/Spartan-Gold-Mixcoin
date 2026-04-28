@@ -54,6 +54,7 @@ module.exports = class MixcoinMixer extends UtxoClient {
     // Creates the mixer deadline 24 hours after the client deadline
     let mixerDeadline = new Date(clientDeadline);
     mixerDeadline.setHours(mixerDeadline.getHours() + 24);
+    mixerDeadline = mixerDeadline.getTime();
 
     let acceptedRequest = {
       chunkSize: chunkSize, 

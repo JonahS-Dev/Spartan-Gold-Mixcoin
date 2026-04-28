@@ -106,4 +106,42 @@ module.exports = class MixcoinClient extends UtxoClient {
     this.rememberPendingMixRequest(request, mixerPubKey);
     this.net.sendMessage(mixerAddress, MixcoinConstants.REQUEST_MIX, request);
   }
+
+  checkAllWarranties() {
+    for(let [nonce, {warranty, signature}] of this.warranties) {
+      this.checkWarranty(warranty);
+    }
+  }
+
+  checkWarranty(warranty) {
+    // let blockHashTemp = this.lastConfirmedBlock.hashVal(); //prevBlockHash; //.hashVal();
+
+
+    // Check all warranties
+    console.log(warranty);
+    // Check to see if the payout was fulfilled in any block
+    console.log(this.lastConfirmedBlock);
+    let currBlock = this.blocks.get(this.lastConfirmedBlock.hashVal());
+    while(currBlock !== undefined || currBlock.timestamp > warranty.clientDeadline)
+    {
+      console.log(currBlock.chainLength);
+      if(currBlock.timestamp > warranty.mixerDeadline) {
+        console.log(currBlock.chainLength);
+        for(let tx of currBlock.transactions) {
+          console.log(tx);
+          if(tx.from === warranty.mixerAddress && tx.outputs.includes({amount: warranty.payoutAmount, address: warranty.outputAddress})) {
+            console.log("PAYOUT FROM WARRANTY FOUND");
+            return;
+          }
+        }
+      }
+      // console.log(`CONTAINS? ${currBlock.contains()}`)
+      // blockHashTemp = currBlock.prevBlockHash;
+      currBlock = this.blocks.get(currBlock.prevBlockHash);
+      if(currBlock === undefined) break;
+    }
+
+    console.log("PAYOUT FROM WARRANTY NOT FOUND");
+    // Maybe we want to broadcast the warranty?
+  }
 };

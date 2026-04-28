@@ -117,17 +117,6 @@ alice.postTransaction([{ amount: 40, address: addr }]);
 /* 
  * NEW TRANSACTIONS HERE
 */
-// setTimeout(() => {
-//   console.log();
-//   showBalances();
-//   let mixerAddr = pabloEscobar.address;
-//   let inputAddr = alCapone.address;
-//   let outputAddr = alCapone.createAddress();
-//   console.log();
-//   console.log(`***Al Capone is requesting a mix from Pablo Escobar at address ${mixerAddr}`);
-//   console.log();
-//   alCapone.requestMix(mixerAddr, MixcoinConstants.STANDARD_CHUNK_SIZE, inputAddr, outputAddr, Date.now(), pabloEscobar.keyPair.public);
-// }, 500);
 
 function requestValidMix(mixer, client) {
   setTimeout(() => {
@@ -140,17 +129,13 @@ function requestValidMix(mixer, client) {
     console.log(`***${client.name} is requesting a mix from ${mixer.name} at address ${mixerAddr}`);
     console.log();
     client.requestMix(mixerAddr, MixcoinConstants.STANDARD_CHUNK_SIZE, inputAddr, outputAddr, Date.now(), mixer.keyPair.public);
-  }, 500);
+  }, 2000);
 }
 
 requestValidMix(pabloEscobar, alCapone);
-
-// setTimeout(() => {
-
-// }, 500);
-// requestValidMix(pabloEscobar, samBankmanFried);
-// requestValidMix(pabloEscobar, meyerLansky);
-// requestValidMix(pabloEscobar, ferdinandMarcos);
+requestValidMix(pabloEscobar, samBankmanFried);
+requestValidMix(pabloEscobar, meyerLansky);
+requestValidMix(pabloEscobar, ferdinandMarcos);
 
 /*
  * END OF NEW TRANSACTIONS
@@ -167,6 +152,8 @@ setTimeout(() => {
   console.log();
   console.log(`Minnie's chain length is ${minnie.currentBlock.chainLength}.`);
 
+  alCapone.checkAllWarranties();
+
   process.exit(0);
-}, 7000);
+}, 12000);
 
