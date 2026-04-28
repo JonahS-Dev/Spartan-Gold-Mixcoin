@@ -152,6 +152,7 @@ setTimeout(() => {
   console.log();
   console.log(`Minnie's chain length is ${minnie.currentBlock.chainLength}.`);
 
+  console.log();
   alCapone.checkAllWarranties();
 
   process.exit(0);

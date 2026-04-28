@@ -109,39 +109,50 @@ module.exports = class MixcoinClient extends UtxoClient {
 
   checkAllWarranties() {
     for(let [nonce, {warranty, signature}] of this.warranties) {
-      this.checkWarranty(warranty);
+      this.checkWarranty(warranty, signature);
     }
   }
 
-  checkWarranty(warranty) {
-    // let blockHashTemp = this.lastConfirmedBlock.hashVal(); //prevBlockHash; //.hashVal();
+  checkWarranty(warranty, signature) {
+    // go backward from the latest confirmed block
+    let currBlock = this.lastConfirmedBlock;
 
+    while (currBlock !== undefined && currBlock.timestamp > warranty.clientDeadline) {
+      // only blocks before the mixer deadline can satisfy the warranty
+      if (currBlock.timestamp <= warranty.mixerDeadline) {
 
-    // Check all warranties
-    console.log(warranty);
-    // Check to see if the payout was fulfilled in any block
-    console.log(this.lastConfirmedBlock);
-    let currBlock = this.blocks.get(this.lastConfirmedBlock.hashVal());
-    while(currBlock !== undefined || currBlock.timestamp > warranty.clientDeadline)
-    {
-      console.log(currBlock.chainLength);
-      if(currBlock.timestamp > warranty.mixerDeadline) {
-        console.log(currBlock.chainLength);
-        for(let tx of currBlock.transactions) {
-          console.log(tx);
-          if(tx.from === warranty.mixerAddress && tx.outputs.includes({amount: warranty.payoutAmount, address: warranty.outputAddress})) {
-            console.log("PAYOUT FROM WARRANTY FOUND");
-            return;
+        // loop through transactions in the current block
+        for (let [txId, tx] of currBlock.transactions) {
+          // check whether mixer funded this transaction
+          let cameFromMixer = tx.from.includes(warranty.mixerAddress);
+
+          // check whether any output pays the expected amount to the expected address
+          let hasCorrectPayout = tx.outputs.some(({ amount, address }) => {
+            let isAmountMatch = amount === warranty.payoutAmount;
+            let isAddressMatch = address === warranty.outputAddress;
+
+            return isAmountMatch && isAddressMatch;
+          });
+
+          let payoutFound = cameFromMixer && hasCorrectPayout;
+
+          if (payoutFound) {
+            console.log(`Warranty payout found! Transaction ID: ${txId}`);
+            return txId;
           }
         }
       }
-      // console.log(`CONTAINS? ${currBlock.contains()}`)
-      // blockHashTemp = currBlock.prevBlockHash;
+
       currBlock = this.blocks.get(currBlock.prevBlockHash);
-      if(currBlock === undefined) break;
     }
 
-    console.log("PAYOUT FROM WARRANTY NOT FOUND");
-    // Maybe we want to broadcast the warranty?
+    // if no valid payout exists, report the mixer as a cheater
+    console.log("PAYOUT FROM WARRANTY NOT FOUND, BROADCASTING MIXER AS CHEATER.");
+    this.net.broadcast(MixcoinConstants.CHEATER_FOUND, {
+      warranty: warranty,
+      signature: signature,
+    });
+
+    return false;
   }
 };
