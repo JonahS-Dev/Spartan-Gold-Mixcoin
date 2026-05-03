@@ -14,19 +14,31 @@ module.exports = class MixcoinClient extends UtxoClient {
 
     // store submitted mixing requests
     this.pendingMixRequests = new Map();
-    this.pendingMixRequestPubkeys = new Map();
+    this.blacklistedMixers = new Set();
 
     // store promises/warranties from mixers to use as evidence
     this.warranties = new Map();
 
     this.setupResponseListener();
+    this.setupCheatingMixerListener();
+
+    this.payMixer = true;
+  }
+
+  setupCheatingMixerListener() {
+    this.on(MixcoinConstants.CHEATER_FOUND, (input) => {
+      let {warranty, signature} = input;
+
+      if(this.blacklistedMixers.has(warranty.mixerAddress) === true) {
+        this.log(`Mixer ${warranty.mixerAddress} is already blacklisted.`);
+        return;
+      }
+      this.checkWarranty(warranty, signature);
+    });
   }
 
   setupResponseListener() {
     this.on(MixcoinConstants.REQUEST_MIX_RESPONSE, (response) => {
-      console.log(`RECEIVED RESPONSE ${response}`);
-      console.log(`Response Message ${response.msg}`);
-      console.log(`Response Warranty ${response.warranty}`);
       if (response.status !== MixcoinConstants.STATUS_ACCEPTED) {
         return;
       }
@@ -37,8 +49,10 @@ module.exports = class MixcoinClient extends UtxoClient {
       let validWarranty = this.verifyWarranty(response.warranty, response.signature);
       if(validWarranty) {
         this.rememberWarranty(response.warranty, response.signature);
-        console.log("added valid warranty");
-        this.fundMixRequest(response.warranty.nonce);
+        console.log("Added valid warranty");
+        if(this.payMixer){
+          this.fundMixRequest(response.warranty.nonce);
+        }
       }
     });
   }
@@ -55,7 +69,6 @@ module.exports = class MixcoinClient extends UtxoClient {
   // remember sent mixing requests to see the outcome later
   rememberPendingMixRequest(request, mixerPubKey) {
     this.pendingMixRequests.set(request.nonce, request);
-    this.pendingMixRequestPubkeys.set(request.nonce, mixerPubKey);
   }
 
   // store warranties from mixers to use as evidence in the future
@@ -65,7 +78,8 @@ module.exports = class MixcoinClient extends UtxoClient {
 
   // verify that the warranty is valid before sending coins
   verifyWarranty(warranty, sig) {
-    return utils.verifySignature(this.pendingMixRequestPubkeys.get(warranty.nonce), warranty, sig);
+    // return utils.verifySignature(this.pendingMixRequestPubkeys.get(warranty.nonce), warranty, sig);
+    return utils.verifySignature(this.net.clients.get(warranty.mixerAddress).wellKnownPublicKey, warranty, sig);
   }
 
   // after warranty is verified, send amount to mixer's deposit address
@@ -114,10 +128,28 @@ module.exports = class MixcoinClient extends UtxoClient {
   }
 
   checkWarranty(warranty, signature) {
+    // verify signature
+    let validSig = this.verifyWarranty(warranty, signature)
+    if(!validSig) {
+      this.log("Signature does not match public key. Broadcaster may be untrustworthy.");
+      return true;
+    } else {
+      this.log("Signature verified with public key. Checking to see if the mixer posted a transaction...");
+    }
+
+    // check if the deadline is up
+    if(warranty.mixerDeadline > Date.now()) {
+      this.log("Mixer still has time to send.");
+      return;
+    }
+
     // go backward from the latest confirmed block
     let currBlock = this.lastConfirmedBlock;
+    let mixerPayoutFound = false;
+    let clientPaymentFound = false;
+    let transactionFound = undefined;
 
-    while (currBlock !== undefined && currBlock.timestamp > warranty.clientDeadline) {
+    while (currBlock !== undefined) {
       // only blocks before the mixer deadline can satisfy the warranty
       if (currBlock.timestamp <= warranty.mixerDeadline) {
 
@@ -130,29 +162,67 @@ module.exports = class MixcoinClient extends UtxoClient {
           let hasCorrectPayout = tx.outputs.some(({ amount, address }) => {
             let isAmountMatch = amount === warranty.payoutAmount;
             let isAddressMatch = address === warranty.outputAddress;
+            transactionFound = txId;
 
             return isAmountMatch && isAddressMatch;
           });
 
-          let payoutFound = cameFromMixer && hasCorrectPayout;
+          mixerPayoutFound = cameFromMixer && hasCorrectPayout ? true : mixerPayoutFound;
+        }
+      }
 
-          if (payoutFound) {
-            console.log(`Warranty payout found! Transaction ID: ${txId}`);
-            return txId;
-          }
+      // Check to see if the client sent the money in the first place
+      if(currBlock.timestamp <= warranty.clientDeadline) {
+        // loop through transactions in the current block
+        for (let [txId, tx] of currBlock.transactions) {
+          // check whether mixer funded this transaction
+          let cameFromClient = tx.from.includes(warranty.inputAddress);
+
+          // check whether any output pays the expected amount to the expected address
+          let hasCorrectPayout = tx.outputs.some(({ amount, address }) => {
+            let isAmountMatch = amount === warranty.chunkSize;
+            let isAddressMatch = address === warranty.mixerAddress;
+
+            return isAmountMatch && isAddressMatch;
+          });
+
+          clientPaymentFound = cameFromClient && hasCorrectPayout ? true : clientPaymentFound;
         }
       }
 
       currBlock = this.blocks.get(currBlock.prevBlockHash);
     }
 
+    // The mixer paid (assumes that the client paid. If the client didn't pay but the mixer did, 
+    // we can't do anything about that, and it's on the mixer)
+    if (mixerPayoutFound) {
+      this.log(`Warranty payout found! Transaction ID: ${transactionFound}`);
+      return transactionFound;
+    }
+
+    // The client never paid the mixer
+    if(!clientPaymentFound) {
+      this.log(`Client never paid the mixer. Ignoring the validation...`);
+      return;
+    }
+
     // if no valid payout exists, report the mixer as a cheater
-    console.log("PAYOUT FROM WARRANTY NOT FOUND, BROADCASTING MIXER AS CHEATER.");
+    this.log("PAYOUT FROM WARRANTY NOT FOUND, BROADCASTING MIXER AS CHEATER.");
     this.net.broadcast(MixcoinConstants.CHEATER_FOUND, {
       warranty: warranty,
       signature: signature,
     });
+    this.blacklistedMixers.add(warranty.mixerAddress);
 
     return false;
+  }
+
+  broadcastAllWarranties() {
+    for(let [nonce, {warranty, signature}] of this.warranties) {
+      this.net.broadcast(MixcoinConstants.CHEATER_FOUND, {
+        warranty: warranty,
+        signature: signature,
+      });
+    }
   }
 };

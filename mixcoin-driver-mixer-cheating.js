@@ -6,6 +6,7 @@ const UtxoBlock = require('./utxo-block.js');
 const UtxoClient = require('./utxo-client.js');
 const UtxoMiner = require('./utxo-miner.js');
 const UtxoTransaction = require('./utxo-transaction.js');
+const MixcoinCheatingMixer = require('./mixcoin-cheating-mixer.js');
 const MixcoinMixer = require('./mixcoin-mixer.js');
 const MixcoinClient = require('./mixcoin-client.js');
 const MixcoinConstants = require('./mixcoin-constants.js');
@@ -31,7 +32,7 @@ let meyerLansky = new MixcoinClient({name: "meyerLansky", net: fakeNet});
 let ferdinandMarcos = new MixcoinClient({name: "ferdinandMarcos", net: fakeNet});
 
 // Mixers
-let pabloEscobar = new MixcoinMixer({name: "pabloEscobar", net: fakeNet});
+let pabloEscobar = new MixcoinCheatingMixer({name: "pabloEscobar", net: fakeNet});
 
 // // testing: preventing the mixer from sending return funds
 // pabloEscobar.mixCoins = function(requestIds) {

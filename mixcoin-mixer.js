@@ -15,6 +15,8 @@ module.exports = class MixcoinMixer extends UtxoClient {
     this.seenRequests = new Set();
     this.warrantedRequests = new Map();
     this.fundedRequests = new Set();
+    this.wellKnownKeyPair = utils.generateKeypair();
+    this.wellKnownPublicKey = this.wellKnownKeyPair.public;
   }
 
   reviewRequest(request) {
@@ -53,7 +55,8 @@ module.exports = class MixcoinMixer extends UtxoClient {
 
     // Creates the mixer deadline 24 hours after the client deadline
     let mixerDeadline = new Date(clientDeadline);
-    mixerDeadline.setHours(mixerDeadline.getHours() + 24);
+    // mixerDeadline.setHours(mixerDeadline.getHours() + 24);
+    mixerDeadline.setSeconds(mixerDeadline.getSeconds() + 5);
     mixerDeadline = mixerDeadline.getTime();
 
     let acceptedRequest = {
@@ -83,7 +86,7 @@ module.exports = class MixcoinMixer extends UtxoClient {
       mixed: false, // tracks when coins are paid out after mixing
     });
 
-    let signature = utils.sign(this.keyPair.private, acceptedRequest);
+    let signature = utils.sign(this.wellKnownKeyPair.private, acceptedRequest);
 
     return { status: MixcoinConstants.STATUS_ACCEPTED, 
       warranty: acceptedRequest,

@@ -142,10 +142,19 @@ function requestValidMix(mixer, client) {
   }, 2000);
 }
 
+// Try to make the mixer untrustworthy
+// Should get "Client never paid the mixer. Ignoring the validation..."
+function sendBeforeMixerDeadline(client) {
+  setTimeout(() => {
+    client.broadcastAllWarranties();
+  }, 3000);
+}
+
 requestValidMix(pabloEscobar, alCapone);
 requestValidMix(pabloEscobar, samBankmanFried);
 requestValidMix(pabloEscobar, meyerLansky);
 requestValidMix(pabloEscobar, ferdinandMarcos);
+sendBeforeMixerDeadline(alCapone);
 
 /*
  * END OF NEW TRANSACTIONS

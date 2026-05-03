@@ -142,10 +142,17 @@ function requestValidMix(mixer, client) {
   }, 2000);
 }
 
+// Set alCapone to not pay the mixer to test
+alCapone.payMixer = false;
 requestValidMix(pabloEscobar, alCapone);
 requestValidMix(pabloEscobar, samBankmanFried);
 requestValidMix(pabloEscobar, meyerLansky);
 requestValidMix(pabloEscobar, ferdinandMarcos);
+
+setTimeout(() => {
+  alCapone.broadcastAllWarranties();
+}, 10000);
+
 
 /*
  * END OF NEW TRANSACTIONS

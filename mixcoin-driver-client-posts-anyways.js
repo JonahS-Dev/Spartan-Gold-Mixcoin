@@ -152,6 +152,8 @@ requestValidMix(pabloEscobar, ferdinandMarcos);
 */
 // Print out the final balances after it has been running for some time.
 setTimeout(() => {
+  alCapone.broadcastAllWarranties();
+
   console.log();
   showBalances();
 
