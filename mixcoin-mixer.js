@@ -2,7 +2,7 @@
 
 const UtxoClient = require("./utxo-client.js");
 const MixcoinConstants = require("./mixcoin-constants.js");
-const { Blockchain, utils } = require('spartan-gold');
+const { Blockchain, utils, Block } = require('spartan-gold');
 
 /**
  * A MixCoin mixer node.
@@ -11,7 +11,7 @@ module.exports = class MixcoinMixer extends UtxoClient {
   constructor(...args) {
     super(...args);
     this.setupRequestListener();
-    this.setupTransactionListener();
+    // this.setupTransactionListener();
     this.seenRequests = new Set();
     this.warrantedRequests = new Map();
     this.fundedRequests = new Set();
@@ -113,10 +113,21 @@ module.exports = class MixcoinMixer extends UtxoClient {
   }
 
   // allow mixer to listen for posted transactions
-  setupTransactionListener() {
-    this.on(Blockchain.POST_TRANSACTION, (tx) => {
-      this.recordFundedRequests(tx);
-    });
+  // setupTransactionListener() {
+  //   // this.on(Blockchain.POST_TRANSACTION, (tx) => {
+  //   //   this.recordFundedRequests(tx);
+  //   // });
+  //   // this.on(Blockchain.PROOF_FOUND, ())
+  //   // this
+  // }
+
+  receiveBlock(block) {
+    let returnedBlock = super.receiveBlock(block);
+    if(block !== null) {
+      for(let [tx_id, tx] of block.transactions) {
+        this.recordFundedRequests(tx);
+      }
+    }
   }
 
   // check if a posted transaction is funding a mix request
@@ -154,7 +165,7 @@ module.exports = class MixcoinMixer extends UtxoClient {
       // wait before attempting to payout
       setTimeout(() => {
         this.mixCoins(Array.from(this.fundedRequests));
-      }, 3200);
+      }, 2500);
     }
   }
 
