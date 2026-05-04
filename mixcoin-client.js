@@ -78,7 +78,6 @@ module.exports = class MixcoinClient extends UtxoClient {
 
   // verify that the warranty is valid before sending coins
   verifyWarranty(warranty, sig) {
-    // return utils.verifySignature(this.pendingMixRequestPubkeys.get(warranty.nonce), warranty, sig);
     return utils.verifySignature(this.net.clients.get(warranty.mixerAddress).wellKnownPublicKey, warranty, sig);
   }
 

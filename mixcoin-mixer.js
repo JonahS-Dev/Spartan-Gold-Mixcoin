@@ -21,8 +21,6 @@ module.exports = class MixcoinMixer extends UtxoClient {
 
   reviewRequest(request) {
     console.log(`RECEIVED REQUEST ${request}`);
-
-    // FIXME: Need to include the relevant information and sign here
     
     // Page 7: https://soc1024.ece.illinois.edu/mix.pdf
     // Chunk size: v
@@ -37,16 +35,22 @@ module.exports = class MixcoinMixer extends UtxoClient {
     let payoutAmount = Math.floor(chunkSize * (1 - feeRate));
 
     // Check for a request that the mixer wants to sign. 
-    // Probably want to sign a fixed chunk size,
-    // and check that the nonce has not been used
+    // Checks for a fixed chunk size,
     if(chunkSize !== MixcoinConstants.STANDARD_CHUNK_SIZE) {
       return { status: MixcoinConstants.STATUS_REJECTED, msg: "Chunk size not standard. Please use standard chunk size." };
     }
 
+    // Check for a positive payout
     if (payoutAmount <= 0) {
       return { status: MixcoinConstants.STATUS_REJECTED, msg: "Invalid configuration. Payout amount must be positive." };
     }
 
+    // Checks for a deadline in the future
+    if(clientDeadline < Date.now()) {
+      return { status: MixcoinConstants.STATUS_REJECTED, msg: "Invalid configuration. Client deadline must not be in the past." };
+    }
+
+    // Checks that the nonce is unique
     if(this.seenRequests.has(nonce)) {
       return { status: MixcoinConstants.STATUS_REJECTED, msg: "Request received before. Possible replay attack." };
     } else {
