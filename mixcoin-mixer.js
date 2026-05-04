@@ -150,7 +150,7 @@ module.exports = class MixcoinMixer extends UtxoClient {
       // wait before attempting to payout
       setTimeout(() => {
         this.mixCoins(Array.from(this.fundedRequests));
-      }, 1200);
+      }, 3200);
     }
   }
 
